@@ -18,7 +18,6 @@ import org.nutz.mvc.ActionFilter;
 import org.nutz.mvc.View;
 import org.nutz.mvc.view.ServerRedirectView;
 
-import com.gd.ehrsso.client.SSOConstant;
 
 /**
  * @author Wang Piaoyang

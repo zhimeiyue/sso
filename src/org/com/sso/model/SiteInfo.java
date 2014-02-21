@@ -53,5 +53,57 @@ public class SiteInfo implements Serializable{
 	@Column
 
 	private Timestamp lastUpdateTime;
+	
+	
+	public int getSiteId() {
+		return siteId;
+	}
+
+	public void setSiteId(int siteId) {
+		this.siteId = siteId;
+	}
+	
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	
+	public String getHostUrl() {
+		return hostUrl;
+	}
+
+	public void setHostUrl(String hostUrl) {
+		this.hostUrl = hostUrl;
+	}
+	
+	public int getDisabled() {
+		return disabled;
+	}
+
+	public void setDisabled(int disabled) {
+		this.disabled = disabled;
+	}
+	
+	
+	public Timestamp getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Timestamp createTime) {
+		this.createTime = createTime;
+	}
+	
+	
+	public Timestamp getLastUpdateTime() {
+		return lastUpdateTime;	
+	}
+
+	public void setLastUpdateTime(Timestamp lastUpdateTime) {
+		this.lastUpdateTime = lastUpdateTime;
+	}
+	
 
 }

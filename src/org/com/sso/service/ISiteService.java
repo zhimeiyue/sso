@@ -5,11 +5,11 @@ package org.com.sso.service;
 
 import java.util.Map;
 
+import org.com.sso.model.AccessKeyInfo;
+import org.com.sso.model.SiteInfo;
 import org.com.sso.util.MyException;
 
-import com.gd.ehrsso.po.AccessKeyInfo;
-import com.gd.ehrsso.po.AuditInfo;
-import com.gd.ehrsso.po.SiteInfo;
+
 
 /**
  * @author Wang PiaoYang
@@ -40,7 +40,7 @@ public interface ISiteService {
 	 * @param audit
 	 * @throws SSOException
 	 */
-	void approval(AuditInfo audit) throws MyException;
+	//void approval(AuditInfo audit) throws MyException;
 	
 	/**
 	 * 绔欑偣绠＄悊浜哄憳鐢熸垚鎺ュ叆鐮?
