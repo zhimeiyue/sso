@@ -23,4 +23,9 @@ public class MyException extends Exception {
 	public String getLocalizedMessage() {
 		return code+":"+message;
 	}
+
+	public String getCode() {
+		// TODO Auto-generated method stub
+		return code;
+	}
 }

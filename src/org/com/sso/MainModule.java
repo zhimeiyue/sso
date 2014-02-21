@@ -15,7 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.com.sso.service.AccountService;
 import org.com.sso.service.TicketService;
 import org.com.sso.util.MyException;
+import org.com.sso.util.SSOCheckTicket;
 import org.com.sso.util.SSOConstant;
+import org.com.sso.util.SiteAuthorizationFilter;
 import org.nutz.ioc.Ioc;
 import org.nutz.lang.Strings;
 import org.nutz.log.Log;
@@ -23,6 +25,7 @@ import org.nutz.log.Logs;
 import org.nutz.mvc.annotation.At;
 import org.nutz.mvc.annotation.Encoding;
 import org.nutz.mvc.annotation.Fail;
+import org.nutz.mvc.annotation.By;
 import org.nutz.mvc.annotation.Filters;
 import org.nutz.mvc.annotation.IocBy;
 import org.nutz.mvc.annotation.Localization;
@@ -32,6 +35,14 @@ import org.nutz.mvc.annotation.POST;
 import org.nutz.mvc.annotation.Param;
 import org.nutz.mvc.annotation.Views;
 import org.nutz.mvc.ioc.provider.ComboIocProvider;
+import org.nutz.mvc.view.FreemarkerViewMaker;
+
+
+
+
+
+
+
 
 
 
@@ -43,12 +54,12 @@ import org.nutz.mvc.ioc.provider.ComboIocProvider;
 
 @Modules(scanPackage=true)
 @Localization(defaultLang="zh_CN",value="local")
-@Views({})
+@Views({FreemarkerViewMaker.class})
 @Encoding(input="UTF-8",output="UTF-8")
 @Fail("fm:/WEB-INF/views/fail.html")
-@Filters({})
-@IocBy(args = {	//ÅäÖÃIocÈÝÆ÷
-		"*org.nutz.ioc.loader.json.JsonLoader","ioc/", //É¨ÃèiocÎÄ¼þ¼ÐÖÐµÄjsÎÄ¼þ,×÷ÎªJsonLoaderµÄÅäÖÃÎÄ¼þ
+@Filters({@By(type=SSOCheckTicket.class)})
+@IocBy(args = {
+		"*org.nutz.ioc.loader.json.JsonLoader","ioc/", 
 		"*org.nutz.ioc.loader.annotation.AnnotationIocLoader","org.com.sso.service"}, 
 		type = ComboIocProvider.class)
 public class MainModule {
@@ -57,31 +68,117 @@ public class MainModule {
 	private static final String DAO_NAME = "dao";
 	Log log=Logs.getLog(MainModule.class);
 	
-	
+	/***
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
 	
 	@Ok("fm:/WEB-INF/views/index.html")
 	@At("/index")
 	public Object index(HttpServletRequest request,HttpServletResponse response) throws Exception{
 		Map<String,Object> result=new Hashtable<String, Object>();
-      
+		String refererUrl=request.getParameter("returnUrl");
+		
+		log.info("-----------refererUrl----------"+refererUrl);
+		if(Strings.isEmpty(refererUrl)==false){
+			refererUrl=URLDecoder.decode(refererUrl, "utf-8");
+			String ticket="";
+			Cookie[] cookies=request.getCookies();
+			for (Cookie c : cookies) {
+				if(SSOConstant.GD_CK_TICKET.equals(c.getName())){
+					ticket=c.getValue();
+					log.debug("************ticket from cookie:"+ticket);
+					break;
+				}
+			}
+			if(refererUrl.indexOf("?")>0 && refererUrl.indexOf(SSOConstant.GD_CK_TICKET+"=")<0){
+				refererUrl=refererUrl+"&"+SSOConstant.GD_CK_TICKET+"="+URLEncoder.encode(ticket,"utf-8");
+			}
+			else if(refererUrl.indexOf(SSOConstant.GD_CK_TICKET+"=")<0){
+				refererUrl=refererUrl+"?"+SSOConstant.GD_CK_TICKET+"="+URLEncoder.encode(ticket,"utf-8");
+			}
+			log.info("(returnUrl)Send redirect:"+refererUrl);
+			response.sendRedirect(refererUrl);
+			return result;
+		}
+		else{
+			
+			result.put("refererUrl", "");
+		}
 		return result;
 	}
-
+    /*****
+     * 
+     * @param request
+     * @return
+     * @throws Exception
+     */
 	@Ok("fm:")
 	@At("/login")
 	@Filters({})
 	public Object login(HttpServletRequest request) throws Exception{
 		Map<String,Object> result=new Hashtable<String, Object>();
-	
+		String refererUrl=request.getParameter("returnUrl");
+		
+		log.info("-----------refererUrl----------"+refererUrl);
+		if(Strings.isEmpty(refererUrl)==false){
+			result.put("refererUrl", refererUrl);
+		}
+		else{
+			result.put("refererUrl", "");
+		}
 		return result;
 	}
 	@Ok("redirect:/index")
 	@At("/logout")
 	public String logout(HttpServletRequest request,HttpServletResponse response,Ioc ioc){
-		//String ticket=(String)request.getAttribute(SSOConstant.GD_ATTR_TICKET);
-
+		String ticket=(String)request.getAttribute(SSOConstant.GD_ATTR_TICKET);
+		if(Strings.isEmpty(ticket)){
+			ticket=request.getHeader(SSOConstant.HD_GD_EHRSSO_TICKET);
+		}
+		if(Strings.isEmpty(ticket)){
+			ticket=request.getParameter(SSOConstant.GD_CK_TICKET);
+		}
+		if(Strings.isEmpty(ticket)){
+			Cookie[] cookies=request.getCookies();
+			for (Cookie c : cookies) {
+				if(SSOConstant.GD_CK_TICKET.equals(c.getName())){
+					ticket=c.getValue();
+					Cookie cookie=new Cookie(SSOConstant.GD_CK_TICKET,"");
+					cookie.setMaxAge(0);
+					response.addCookie(cookie);
+					break;
+				}
+			}
+		}
+		if(!Strings.isEmpty(ticket)){
+			TicketService ticketService=ioc.get(TicketService.class,"ticketService");
+			try {
+				ticketService.removeTicket(ticket);
+				log.info("removeTicket:"+ticket);
+			} catch (MyException e) {
+				log.error("removeTicket error:"+ticket, e);
+			}
+		}
+		else{
+			
+		}
 		return "index";
 	}
+	/*****
+	 * 
+	 * @param userName
+	 * @param password
+	 * @param refererUrl
+	 * @param request
+	 * @param response
+	 * @param ioc
+	 * @return
+	 * @throws MyException
+	 */
 	@Ok("redirect:/index")
 	@At("/doLogin")
 	@Filters()
@@ -94,16 +191,16 @@ public class MainModule {
 		
 		TicketService ticketService=ioc.get(TicketService.class,"ticketService");
 		try {
-			if(!accountService.validate(userName, password, null)){//ÑéÖ¤ÊÇ·ñÓÉ´Ë¿Í»§
-				throw new MyException("USER_OR_PWD_INVALID","ÓÃ»§Ãû»òÃÜÂë´íÎó");
+			if(!accountService.validate(userName, password, null)){//ï¿½ï¿½Ö¤ï¿½Ç·ï¿½ï¿½É´Ë¿Í»ï¿½
+				throw new MyException("USER_OR_PWD_INVALID","ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
 			}
-			String ticket=ticketService.generateTicket(userName, 600);//Éú³Éticket ²¢²åÈëÊý¾Ý¿â
-			Cookie cookie=new Cookie(SSOConstant.GD_CK_TICKET,ticket);//¸øÓÃ»§·µ»Øcookie
+			String ticket=ticketService.generateTicket(userName, 600);//ï¿½ï¿½ï¿½ticket ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½
+			Cookie cookie=new Cookie(SSOConstant.GD_CK_TICKET,ticket);//ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½cookie
 			cookie.setMaxAge(1200*1000);
 			response.addCookie(cookie);
 			response.addHeader(SSOConstant.HD_GD_EHRSSO_TICKET, ticket);
 			response.addHeader(SSOConstant.HD_GD_EHRSSO_USERNAME, userName);
-			//ÑéÖ¤³É¹¦ºó¾ÍÌøµ½Ô­À´Ò³Ãæ£¬²¢ÇÒurlÐ¯´ø×Åticket
+			//ï¿½ï¿½Ö¤ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ï¿½Ò³ï¿½æ£¬ï¿½ï¿½ï¿½ï¿½urlÐ¯ï¿½ï¿½ï¿½ï¿½ticket
 			if(Strings.isEmpty(refererUrl)==false){
 				refererUrl=URLDecoder.decode(refererUrl, "utf-8");
 				if(refererUrl.indexOf("?")>0 && refererUrl.indexOf(SSOConstant.GD_CK_TICKET+"=")<0){
@@ -120,7 +217,7 @@ public class MainModule {
 			log.info("Response ticket for user->"+userName+":"+ticket);
 			
 			result.put("ticket", ticket);
-			return  result;//·µ»Ø
+			return  result;//ï¿½ï¿½ï¿½ï¿½
 			
 		} catch (MyException e) {
 			log.error(e);
@@ -132,36 +229,98 @@ public class MainModule {
 
 	}
 	
-	
+	/******
+	 * 
+	 * @param accessKey
+	 * @param ioc
+	 * @param request
+	 * @return
+	 */
 	
 	
 	@Ok("json")
 	@At("/validate/?")
 	@Fail("json")
 	@POST
-	@Filters({})
+	@Filters({@By(type=SiteAuthorizationFilter.class)})
 	public Map<String,Object> validate(String accessKey,Ioc ioc,HttpServletRequest request){
 		String remoteHost= request.getRemoteHost();
 		log.info("Do validate for accessKey:"+accessKey+" from host "+remoteHost);
 		
-		String ticket=request.getHeader("");
+		String ticket=request.getHeader(SSOConstant.HD_GD_EHRSSO_TICKET);
 		Map<String,Object> result=new Hashtable<String,Object>();
-
+		if(Strings.isEmpty(ticket)){
+			result.put("code", "failed");
+			result.put("message", "The ticket is required.");
+			log.warn("The ticket is required.");
+			return result;
+		}
+		TicketService ticketService=ioc.get(TicketService.class,"ticketService");
+		ticket=ticket.replace(' ', '+');
+		log.info("---v---t---"+ticket);
+		try {
+			if(!ticketService.validate(ticket)){
+				
+				result.put("code", "failed");
+				result.put("message", "The ticket is invalid.");
+				log.warn("The ticket is invalid."+ticket);
+				return result;
+			}
+			String userName=ticketService.trimUserNameFromTicket(ticket);
+			result.put("userName", userName);
+		} catch (MyException e) {
+			result.put("code", "failed");
+			result.put("message", e.getLocalizedMessage());
+			log.warn("failed...",e);
+			return result;
+		}
+		result.put("code", "success");
+		result.put("message","titcket is valided.");
+		log.info("validate successfully!");
 		return result;
 	}
+	
+	
+	/***
+	 * 
+	 * @param accessKey
+	 * @param ioc
+	 * @param request
+	 * @return
+	 */
 	@Ok("json")
 	@At("/doLogout/?")
 	@Fail("json")
 	@POST
-	@Filters({})
+	@Filters({@By(type=SiteAuthorizationFilter.class)})
 	public Map<String,Object> doLogout(String accessKey,Ioc ioc,HttpServletRequest request){
 		String remoteHost= request.getRemoteHost();
 		log.info("Do validate for accessKey:"+accessKey+" from host "+remoteHost);
 		
-		String ticket=request.getHeader("");
+		String ticket=request.getHeader(SSOConstant.HD_GD_EHRSSO_TICKET);
 		
 		Map<String,Object> result=new Hashtable<String,Object>();
-
+		if(Strings.isEmpty(ticket)){
+			result.put("code", "failed");
+			result.put("message", "The ticket is required.");
+			log.warn("The ticket is required.");
+			return result;
+		}
+		TicketService ticketService=ioc.get(TicketService.class,"ticketService");
+		try {
+			ticketService.removeTicket(ticket);
+			String userName=ticketService.trimUserNameFromTicket(ticket);
+			log.info("The ticket of "+userName+" is removed");
+			result.put("userName", userName);
+		} catch (MyException e) {
+			result.put("code", "failed");
+			result.put("message", e.getLocalizedMessage());
+			log.warn("failed...",e);
+			return result;
+		}
+		result.put("code", "success");
+		result.put("message","titcket is removed.");
+		log.info("doLogout successfully!");
 		return result;
 	}
 	
