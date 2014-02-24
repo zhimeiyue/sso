@@ -119,6 +119,7 @@ public class TicketInfo implements Serializable {
 	public void setLastUpdateTime(Timestamp lastUpdateTime) {
 		this.lastUpdateTime = lastUpdateTime;
 	}
+<<<<<<< HEAD
 	public String getticket() {
 		return ticket;	
 	}
@@ -126,5 +127,7 @@ public class TicketInfo implements Serializable {
 		
 		this.ticket = ticket;
 	}
+=======
+>>>>>>> origin/master
 
 }

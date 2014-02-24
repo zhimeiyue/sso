@@ -5,17 +5,27 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
+<<<<<<< HEAD
 import org.apache.commons.codec.binary.Hex;
 import org.com.sso.model.TicketInfo;
 import org.com.sso.util.MyException;
 import org.com.sso.util.TripleDES;
+=======
+import org.com.sso.util.MyException;
+>>>>>>> origin/master
 import org.nutz.dao.Dao;
 import org.nutz.ioc.loader.annotation.Inject;
 import org.nutz.lang.Lang;
 import org.nutz.log.Log;
 import org.nutz.log.Logs;
 
+<<<<<<< HEAD
 
+=======
+import com.gd.common.TripleDES;
+import com.gd.ehrsso.SSOException;
+import com.gd.ehrsso.po.TicketInfo;
+>>>>>>> origin/master
 
 public class TicketService implements ITicketService {
 	 Log log=Logs.getLog(TicketService.class);
@@ -35,7 +45,11 @@ public class TicketService implements ITicketService {
 				sb.append(Hex.encodeHexString(buff)+":");
 				
 			} catch (Exception e) {
+<<<<<<< HEAD
 				throw new MyException("FAILED_TDES_ENCRYPT",e.getMessage());
+=======
+				throw new SSOException("FAILED_TDES_ENCRYPT",e.getMessage());
+>>>>>>> origin/master
 			}
 			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			String ticketBody=userName+":"+sdf.format(new Date(System.currentTimeMillis()));
@@ -58,7 +72,11 @@ public class TicketService implements ITicketService {
 			ticket.setDisabled(0);
 			ticket.setLastUpdateTime(new Timestamp(System.currentTimeMillis()));
 			ticket.setCreateTime(ticket.getLastUpdateTime());
+<<<<<<< HEAD
 			ticket.setticket(sb.toString());
+=======
+			ticket.setTicket(sb.toString());
+>>>>>>> origin/master
 			ticket.setTimeout(timeout);
 			ticket.setUserName(userName);
 			dao.insert(ticket);

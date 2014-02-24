@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+<<<<<<< HEAD
+=======
+	<classpathentry kind="src" path="conf"/>
+>>>>>>> origin/master
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.6.0_25">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
@@ -13,6 +17,11 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+<<<<<<< HEAD
 	<classpathentry kind="src" path="conf"/>
+=======
+	<classpathentry kind="lib" path="E:/blog/WebContent/WEB-INF/lib/jsornorg.jar"/>
+	<classpathentry kind="src" path="/ehrSSO"/>
+>>>>>>> origin/master
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
